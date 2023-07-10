@@ -1,5 +1,5 @@
 const { signToken } = require('../utils/auth');
-const {  User } = require('../models');
+const { User } = require('../models');
 
 const resolvers = {
     Qurty: {
@@ -19,7 +19,7 @@ const resolvers = {
             return { token, user };
         },
 
-        login: async (parent, {email, password }) => {
+        login: async (parent, { email, password }) => {
             const user = await User.findOne({ email });
 
             if (!user) {
@@ -27,9 +27,34 @@ const resolvers = {
             }
 
             const token = signToken(user);
-            return { token, user};
+            return { token, user };
 
         },
+
+        deleteBook: async (parent, args, context) => {
+            const deleteBook = await User.findOneAndUpdate(
+                { _id: context.user._id },
+                { $pull: { savedBooks: { bookId: args.bookId } } },
+                { new: true }
+            );
+            if (!deleteBook) {
+                return res.status(404).json({ message: 'Could not find book with this ID' });
+            }
+            return deleteBook;
+        },
+
+        saveBook: async (parent, {user, body}) => {
+            try {
+                const updateBook = await User.findOneAndUpdate(
+                    { _id: context.user._id },
+                    { $addToSet: { savedBooks: body } },
+                    { new: true, runValidators: true }
+                );
+                return updateBook;
+            } catch (err) {
+                return err;
+            }
+        }
     },
 };
 
